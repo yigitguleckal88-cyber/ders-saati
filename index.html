@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Ders Saati — Odak & Plan</title>
+  <meta name="description" content="Ders çalışma sayacı, günlük yapılacaklar listesi, verimlilik takibi ve kişiselleştirilebilir tasarım." />
+  <meta name="theme-color" content="#0b0e1a" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏱️</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">⏱️</div>
+        <div>
+          <h1>Ders Saati</h1>
+          <p id="todayLabel">—</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="goal-pill" id="goalPill">🎯 0 / 120 dk</div>
+        <div class="streak-pill" id="streakPill" title="Üst üste hedefe yakın çalışılan gün">🔥 0</div>
+        <button id="settingsBtn" class="icon-btn" title="Ayarlar (S)" aria-label="Ayarlar">⚙️</button>
+      </div>
+    </header>
+
+    <nav class="tabs" id="mainTabs" role="tablist" aria-label="Uygulama sekmeleri">
+      <button type="button" class="tab active" data-tab="focus" role="tab" aria-selected="true">
+        <span class="tab-icon">⏱</span> Odak
+      </button>
+      <button type="button" class="tab" data-tab="plan" role="tab" aria-selected="false">
+        <span class="tab-icon">✅</span> Yapılacaklar
+        <span class="tab-count" id="tabPlanCount" hidden>0</span>
+      </button>
+      <button type="button" class="tab" data-tab="calendar" role="tab" aria-selected="false">
+        <span class="tab-icon">📅</span> Takvim
+      </button>
+      <button type="button" class="tab" data-tab="theme" role="tab" aria-selected="false">
+        <span class="tab-icon">🎨</span> Tasarım
+      </button>
+    </nav>
+
+    <main>
+      <!-- ============ ODAK ============ -->
+      <section class="panel active" id="panel-focus" data-panel="focus" role="tabpanel">
+        <div class="layout">
+          <section class="card timer-card">
+            <div class="mode-switch" role="tablist">
+              <button class="mode-btn active" data-mode="study" role="tab">📚 Ders</button>
+              <button class="mode-btn" data-mode="break" role="tab">☕ Mola</button>
+            </div>
+
+            <div class="timer-wrap">
+              <svg class="ring" viewBox="0 0 260 260" aria-hidden="true">
+                <defs>
+                  <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" style="stop-color: var(--accent)" />
+                    <stop offset="100%" style="stop-color: var(--accent-2)" />
+                  </linearGradient>
+                  <linearGradient id="ringGradBreak" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#f6ad55" />
+                    <stop offset="100%" stop-color="#f6e05e" />
+                  </linearGradient>
+                </defs>
+                <circle class="ring-bg" cx="130" cy="130" r="116" />
+                <circle class="ring-fg" id="ringFg" cx="130" cy="130" r="116" />
+              </svg>
+              <div class="timer-inner">
+                <div class="mode-label" id="modeLabel">Ders zamanı</div>
+                <div class="time" id="timeText">25:00</div>
+                <div class="session-dots" id="sessionDots" title="Tur ilerlemesi"></div>
+                <div class="active-task" id="activeTaskLabel">Görev seçilmedi</div>
+              </div>
+            </div>
+
+            <div class="controls">
+              <button class="btn primary" id="startBtn">
+                <span id="startIcon">▶</span><span id="startText">Başlat</span>
+              </button>
+              <button class="btn ghost" id="skipBtn" title="Aşamayı atla">⏭</button>
+              <button class="btn ghost" id="resetBtn" title="Sıfırla (R)">↺</button>
+            </div>
+
+            <div class="presets" id="presets">
+              <button data-study="25" data-break="5" data-long="15">25/5</button>
+              <button data-study="45" data-break="10" data-long="20">45/10</button>
+              <button data-study="50" data-break="10" data-long="20">50/10</button>
+              <button data-study="90" data-break="20" data-long="30">90/20</button>
+            </div>
+
+            <p class="hint" id="hint">İpucu: Başlat’a bas, sekmeyi değiştirmeden çalış. Sekme değişirse odak kalitesi düşer.</p>
+          </section>
+
+          <div class="side-col">
+            <section class="card mini-plan-card">
+              <div class="card-head">
+                <h2>✅ Bugünkü görevler</h2>
+                <button type="button" class="link-btn" id="openPlanBtn">Tümü →</button>
+              </div>
+              <ul id="miniTaskList" class="mini-list"></ul>
+              <p class="empty mini-empty" id="miniEmpty">Henüz görev yok. Yapılacaklar sekmesinden ekle.</p>
+              <div class="mini-foot">
+                <div class="bar"><i id="miniBar"></i></div>
+                <span id="miniProgress">0/0</span>
+              </div>
+            </section>
+
+            <section class="card stats-card">
+              <div class="card-head">
+                <h2>📊 Verimlilik</h2>
+                <span class="badge" id="scoreBadge">—</span>
+              </div>
+
+              <div class="score-row">
+                <div class="score-ring-wrap">
+                  <svg viewBox="0 0 120 120" class="score-ring" aria-hidden="true">
+                    <circle class="score-track" cx="60" cy="60" r="52" />
+                    <circle class="score-fg" id="scoreFg" cx="60" cy="60" r="52" />
+                  </svg>
+                  <div class="score-center">
+                    <strong id="scoreValue">0</strong>
+                    <small>/100</small>
+                  </div>
+                </div>
+                <div class="score-text">
+                  <div class="score-label" id="scoreLabel">Henüz başlamadın</div>
+                  <p id="scoreHint">Ders çalışmaya başlayınca puanın oluşur.</p>
+                </div>
+              </div>
+
+              <div class="metrics">
+                <div class="metric">
+                  <div class="metric-top"><span>Hedef</span><span id="goalMetric">0%</span></div>
+                  <div class="bar"><i id="goalBar"></i></div>
+                </div>
+                <div class="metric">
+                  <div class="metric-top"><span>Odak kalitesi</span><span id="focusMetric">—</span></div>
+                  <div class="bar"><i id="focusBar"></i></div>
+                </div>
+                <div class="metric">
+                  <div class="metric-top"><span>Plan tamamlama</span><span id="planMetric">—</span></div>
+                  <div class="bar"><i id="planBar"></i></div>
+                </div>
+                <div class="metric">
+                  <div class="metric-top"><span>Mola disiplini</span><span id="breakMetric">—</span></div>
+                  <div class="bar"><i id="breakBar"></i></div>
+                </div>
+              </div>
+
+              <div class="stat-grid">
+                <div class="stat"><strong id="studyStat">0 dk</strong><span>Ders</span></div>
+                <div class="stat"><strong id="breakStat">0 dk</strong><span>Mola</span></div>
+                <div class="stat"><strong id="sessionStat">0</strong><span>Oturum</span></div>
+                <div class="stat"><strong id="distractStat">0 dk</strong><span>Dikkat dağınık</span></div>
+              </div>
+
+              <div class="week-head">
+                <h3>Son 7 gün</h3>
+                <span class="muted" id="weekTotal"></span>
+              </div>
+              <div class="week-chart" id="weekChart"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ YAPILACAKLAR ============ -->
+      <section class="panel" id="panel-plan" data-panel="plan" role="tabpanel">
+        <div class="plan-layout">
+          <section class="card plan-card">
+            <div class="card-head">
+              <div>
+                <h2>✅ Günlük Yapılacaklar</h2>
+                <p class="sub">Görev ekle, seç ve odaklan. Süre bitince çalıştığın dakika göreve işlenir.</p>
+              </div>
+              <span class="badge" id="planSummary">0/0 dk</span>
+            </div>
+
+            <form id="taskForm" class="task-form" autocomplete="off">
+              <input id="taskText" type="text" placeholder="Ne çalışacaksın? (ör. Türev soruları)" maxlength="80" required />
+              <div class="task-form-row">
+                <input id="taskSubject" type="text" placeholder="Ders (Matematik)" maxlength="24" />
+                <input id="taskMinutes" type="number" min="5" max="480" step="5" value="30" title="Planlanan dakika" />
+                <button type="submit" class="add-btn" title="Görev ekle">+</button>
+              </div>
+            </form>
+
+            <div class="filters" id="planFilters">
+              <button type="button" class="filter-chip active" data-filter="all">Tümü</button>
+              <button type="button" class="filter-chip" data-filter="open">Bekleyen</button>
+              <button type="button" class="filter-chip" data-filter="done">Tamamlanan</button>
+            </div>
+
+            <ul id="taskList" class="task-list"></ul>
+            <p class="empty" id="planEmpty">Bugün için plan yok. Yukarıdan ilk görevini ekle.</p>
+          </section>
+
+          <aside class="plan-side">
+            <section class="card">
+              <div class="card-head"><h2>📌 Günün Özeti</h2></div>
+              <div class="stat-grid plan-stat-grid">
+                <div class="stat"><strong id="planStatTasks">0/0</strong><span>Görev</span></div>
+                <div class="stat"><strong id="planStatPlanned">0 dk</strong><span>Planlanan</span></div>
+                <div class="stat"><strong id="planStatSpent">0 dk</strong><span>Çalışılan</span></div>
+                <div class="stat"><strong id="planStatActive" title="">—</strong><span>Aktif görev</span></div>
+              </div>
+
+              <div class="metric">
+                <div class="metric-top"><span>Görev ilerlemesi</span><span id="taskProgressText">0%</span></div>
+                <div class="bar"><i id="taskProgressBar"></i></div>
+              </div>
+              <div class="metric">
+                <div class="metric-top"><span>Süre ilerlemesi</span><span id="timeProgressText">0%</span></div>
+                <div class="bar"><i id="timeProgressBar"></i></div>
+              </div>
+
+              <button type="button" class="btn primary w-full" id="focusActiveBtn">⏱ Odağa geç</button>
+            </section>
+
+            <section class="card tip-card">
+              <h2>💡 İpucu</h2>
+              <p id="planTip">Bugünün görevlerini küçük parçalara böl. 25 dakikalık oturumlar beynin için ideal.</p>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ============ TAKVİM ============ -->
+      <section class="panel" id="panel-calendar" data-panel="calendar" role="tabpanel">
+        <div class="calendar-layout">
+          <section class="card calendar-card">
+            <div class="calendar-head">
+              <div>
+                <h2 id="calendarTitle">—</h2>
+                <p class="sub" id="calendarSub">Çalışma geçmişin ve planların</p>
+              </div>
+              <div class="calendar-actions">
+                <button type="button" class="icon-btn" id="calPrev" title="Önceki ay" aria-label="Önceki ay">‹</button>
+                <button type="button" class="btn ghost small-btn" id="calToday">Bugün</button>
+                <button type="button" class="icon-btn" id="calNext" title="Sonraki ay" aria-label="Sonraki ay">›</button>
+              </div>
+            </div>
+
+            <div class="calendar-weekdays" id="calendarWeekdays"></div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+
+            <div class="calendar-legend">
+              <span><i class="legend-dot hit"></i> Hedef tamam</span>
+              <span><i class="legend-dot partial"></i> Kısmi çalışma</span>
+              <span><i class="legend-dot task"></i> Görev var</span>
+            </div>
+          </section>
+
+          <aside class="calendar-side">
+            <section class="card day-detail">
+              <div class="card-head">
+                <div>
+                  <h2 id="dayDetailTitle">Bugün</h2>
+                  <p class="sub" id="dayDetailDate">—</p>
+                </div>
+                <span class="badge" id="dayDetailBadge">0 dk</span>
+              </div>
+
+              <div class="stat-grid day-stat-grid">
+                <div class="stat"><strong id="dayStudy">0 dk</strong><span>Ders</span></div>
+                <div class="stat"><strong id="dayBreak">0 dk</strong><span>Mola</span></div>
+                <div class="stat"><strong id="daySessions">0</strong><span>Oturum</span></div>
+                <div class="stat"><strong id="dayScore">0</strong><span>Puan</span></div>
+              </div>
+
+              <div class="metric">
+                <div class="metric-top"><span>Hedef</span><span id="dayGoalText">0 / 120 dk</span></div>
+                <div class="bar"><i id="dayGoalBar"></i></div>
+              </div>
+
+              <h3 class="day-tasks-title">Görevler <span class="muted" id="dayTaskCount">0/0</span></h3>
+              <ul id="dayTaskList" class="mini-list day-task-list"></ul>
+              <p class="empty" id="dayTaskEmpty">Bu gün için görev yok.</p>
+
+              <form id="dayTaskForm" class="task-form compact" autocomplete="off">
+                <input id="dayTaskText" type="text" placeholder="Bu güne görev ekle..." maxlength="80" required />
+                <div class="task-form-row">
+                  <input id="dayTaskSubject" type="text" placeholder="Ders" maxlength="24" />
+                  <input id="dayTaskMinutes" type="number" min="5" max="480" step="5" value="30" title="Planlanan dakika" />
+                  <button type="submit" class="add-btn" title="Görev ekle">+</button>
+                </div>
+              </form>
+              <p class="muted small" id="dayTaskNote">Buraya eklediğin görevler Yapılacaklar sekmesinde de görünür.</p>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ============ TASARIM ============ -->
+      <section class="panel" id="panel-theme" data-panel="theme" role="tabpanel">
+        <div class="theme-layout">
+          <section class="card theme-presets">
+            <div class="card-head">
+              <div>
+                <h2>🎨 Hazır Temalar</h2>
+                <p class="sub">Bir tıkla tüm renkleri değiştir, sonra istediğin gibi ince ayar yap.</p>
+              </div>
+              <span class="badge" id="themeNameBadge">Gece</span>
+            </div>
+            <div class="theme-grid" id="themePresets"></div>
+          </section>
+
+          <section class="card theme-colors">
+            <div class="card-head">
+              <div>
+                <h2>🖌️ Kendi Renklerin</h2>
+                <p class="sub">Renkleri seç, anında uygulanır.</p>
+              </div>
+            </div>
+            <div class="color-grid">
+              <label class="color-field">Vurgu 1<input type="color" id="colorAccent" value="#8b7cff" /></label>
+              <label class="color-field">Vurgu 2<input type="color" id="colorAccent2" value="#4fd1c5" /></label>
+              <label class="color-field">Arka plan<input type="color" id="colorBg" value="#0b0e1a" /></label>
+              <label class="color-field">Kart<input type="color" id="colorCard" value="#171c30" /></label>
+            </div>
+            <div class="theme-actions">
+              <button type="button" class="btn ghost" id="themeResetBtn">↺ Varsayılana dön</button>
+            </div>
+            <p class="muted small">Not: Koyu tonlar yazıların okunabilirliği için daha iyidir.</p>
+          </section>
+
+          <section class="card theme-patterns">
+            <div class="card-head">
+              <div>
+                <h2>✨ Arka Plan Deseni</h2>
+                <p class="sub">Havayı değiştir.</p>
+              </div>
+            </div>
+            <div class="pattern-grid" id="patternGrid"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span>Veriler tarayıcında saklanır.</span>
+      <span class="foot-keys">
+        <kbd>Boşluk</kbd> başlat/duraklat · <kbd>R</kbd> sıfırla · <kbd>S</kbd> ayarlar
+      </span>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="settingsDialog" class="dialog">
+    <form method="dialog" id="settingsForm">
+      <div class="dialog-head">
+        <h2>⚙️ Ayarlar</h2>
+        <button class="icon-btn" value="cancel" formnovalidate aria-label="Kapat">✕</button>
+      </div>
+
+      <div class="settings-grid">
+        <label>Ders süresi (dk)
+          <input type="number" id="setStudy" min="1" max="180" step="1" required />
+        </label>
+        <label>Mola süresi (dk)
+          <input type="number" id="setBreak" min="1" max="60" step="1" required />
+        </label>
+        <label>Uzun mola (dk)
+          <input type="number" id="setLong" min="1" max="90" step="1" required />
+        </label>
+        <label>Uzun mola aralığı (tur)
+          <input type="number" id="setRounds" min="2" max="10" step="1" required />
+        </label>
+        <label class="wide">Günlük hedef (dk)
+          <input type="number" id="setGoal" min="10" max="960" step="5" required />
+        </label>
+      </div>
+
+      <div class="switches">
+        <label class="switch">
+          <input type="checkbox" id="setAutoBreak" />
+          <span>Ders bitince molayı otomatik başlat</span>
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="setAutoStudy" />
+          <span>Mola bitince dersi otomatik başlat</span>
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="setSound" />
+          <span>Sesli bildirim çal</span>
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="setNotify" />
+          <span>Masaüstü bildirimi göster</span>
+        </label>
+      </div>
+
+      <div class="danger-row">
+        <button type="button" id="resetTodayBtn" class="btn danger-soft">Bugünün verilerini sıfırla</button>
+        <button type="button" id="wipeBtn" class="btn danger-soft">Tüm verileri sil</button>
+      </div>
+
+      <div class="dialog-actions">
+        <button value="cancel" class="btn ghost" formnovalidate>İptal</button>
+        <button value="save" class="btn primary" id="saveSettingsBtn">Kaydet</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
